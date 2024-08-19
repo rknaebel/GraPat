@@ -1,3 +1,7 @@
+#navbar {
+    padding: 10px 5px;
+}
+
 #source_text {
     padding-top: 5em;
     padding-bottom: 5em;
@@ -42,12 +46,8 @@
     cursor: move;
 }
 
-.node_type_proponent:hover {
-    border: 2pt solid #000000;
-}
-
 .node_type_opponent {
-    border-radius: 0%;
+    border-radius: 0;
     line-height: 2em;
     border: 2pt solid #000000;
     background-color: white;
@@ -58,7 +58,20 @@
     cursor: move;
 }
 
-.node_type_opponent:hover {
+.node_type_mixed {
+    border-radius: 10%;
+    line-height: 2em;
+    border: 2pt dotted #000000;
+    background-color: lightgray;
+    padding-left: 1.5em;
+    padding-right: 1.5em;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: move;
+}
+
+
+.node_type:hover {
     border: 2pt solid #000000;
 }
 

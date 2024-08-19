@@ -7,6 +7,8 @@ COPY requirements.txt .
 RUN pip install -U pip wheel setuptools
 RUN pip install -r requirements.txt
 
+RUN python -m spacy download de_core_news_sm
+
 COPY grapat grapat
 COPY static static
 COPY templates templates

@@ -4,19 +4,13 @@ import re
 import time
 
 from lxml import etree
-from peewee import SqliteDatabase, Model, TextField, DateTimeField
 
 from grapat.db import db_fetch_results
 
-source_text_folder = 'static/data'
-
-sqlite_db = SqliteDatabase('grapat.db', pragmas={
-    'journal_mode': 'wal',
-    'cache_size': -1024 * 64})
-
 map_node_type = {
     'node_type_proponent': 'pro',
-    'node_type_opponent': 'opp'
+    'node_type_opponent': 'opp',
+    'node_type_mixed': 'mixed'
 }
 
 map_edge_type = {
@@ -43,28 +37,6 @@ def sorted_nicely(l):
     return sorted(l, key=alphanum_key)
 
 
-##############################################################################
-# generated automatically by ...
-# pwiz.py -e mysql -H localhost -u grapat_user_auth -P supersecret grapat > grapat_model.py
-# (changed a little bit to integrate into the code)
-#
-class BaseModel(Model):
-    class Meta:
-        database = sqlite_db
-
-
-class Results(BaseModel):
-    annotation_bundle = TextField(null=True)
-    graph = TextField(null=True)
-    layout = TextField(null=True)
-    sentence = TextField(null=True)
-    time = DateTimeField()
-    username = TextField(null=True)
-
-    class Meta:
-        db_table = 'results'
-
-
 def query_latest_annotation(text_id, username):
     results = db_fetch_results(
         "SELECT graph, time FROM results WHERE username=? AND annotation_bundle=?",
@@ -78,14 +50,12 @@ def query_latest_annotation(text_id, username):
         graph = None
     return graph
 
+
 def read_edus_from_source_xml(text_id, sentence):
-    edus = {}
-    source_elm = etree.parse(source_text_folder + '/' + text_id)
-    token_range_elms = source_elm.xpath('/annotation_bundle/entity[@id = $id ]/token_range', id=sentence)
-    for edu_id, token_range_elm in enumerate(token_range_elms):
-        # edu_id = token_range_elm.get('id')
-        edu_txt = token_range_elm.text
-        edus[str(edu_id)] = edu_txt
+    annotation_bundle = db_fetch_results(
+        'SELECT id, semantics, entity_id, segment FROM annotation_bundles WHERE id=? AND entity_id=?',
+        (text_id, sentence))
+    edus = {str(edu_id): edu[3] for edu_id, edu in enumerate(annotation_bundle)}
     return edus
 
 
@@ -122,7 +92,8 @@ def graph_to_xml(text_id, graph, edus):
     for k in sorted_nicely(graph['nodes'].keys()):
         v = graph['nodes'][k]
         if v.get('n_type', None) in ['node_type_proponent',
-                                     'node_type_opponent']:
+                                     'node_type_opponent',
+                                     'node_type_mixed']:
             adu_type = map_node_type[v['n_type']]
             adu_id = 'a%d' % max_adu_id
             node_to_xml_ids[k] = adu_id
@@ -193,7 +164,7 @@ def graph_to_xml(text_id, graph, edus):
     return xml_string
 
 
-def save_xml_from_grapat(username, text_id, sentence, export_path):
+def get_xml_from_grapat(username, text_id, sentence):
     graph = query_latest_annotation(text_id, username)
     if graph is None:
         return
@@ -201,19 +172,22 @@ def save_xml_from_grapat(username, text_id, sentence, export_path):
         edus = read_edus_from_source_xml(text_id, sentence)
     except IOError:
         return
-    graph_xml = graph_to_xml(text_id, graph, edus)
-    with open(os.path.join(export_path, f'{text_id}-{sentence}-{username}.xml'), 'wb') as fh:
-        fh.write(graph_xml)
+    return graph_to_xml(text_id, graph, edus)
+
+
+def export_file(text_id):
+    db_res = db_fetch_results("SELECT DISTINCT username, sentence FROM results WHERE annotation_bundle LIKE ?",
+                              params=(text_id,))
+    username, sentence = db_res[0]
+    return get_xml_from_grapat(username, text_id, sentence)
 
 
 def export_db():
     timestr = time.strftime("%Y%m%d-%H%M%S")
     export_path = os.path.join("exports", timestr)
     os.makedirs(export_path, exist_ok=True)
-    for username, annotation_id, sentence in db_fetch_results(
+    for username, text_id, sentence in db_fetch_results(
             "SELECT DISTINCT username, annotation_bundle, sentence FROM results"):
-        try:
-            save_xml_from_grapat(username, annotation_id, sentence, export_path)
-        except KeyError as e:
-            print(e)
-            continue
+        graph_xml = get_xml_from_grapat(username, text_id, sentence)
+        with open(os.path.join(export_path, f'{text_id}-{sentence}-{username}.xml'), 'wb') as fh:
+            fh.write(graph_xml)

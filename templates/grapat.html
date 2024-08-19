@@ -21,10 +21,18 @@
     <div class="row">
         <h1>GraPAT (Graph-based Potsdam Annotation Tool)</h1>
     </div>
+    <div id="navbar" class="row">
+        <a type="button" class="btn btn-success" href="/">
+            Annotator
+        </a>
+        <a type="button" class="btn btn-success" href="/files">
+            Settings
+        </a>
+    </div>
     <div class="row">
         <form class="form-inline">
             <label for="username">Annotator:</label>
-            <select id="username" name="annot_file_select" class="form-control">
+            <select id="username" name="annot_file_select" class="form-control" readonly>
             </select>
             <label for="annot_file_select">Annotation File:</label>
             <select id="annot_file_select" name="annot_file_select" class="form-control"
@@ -38,15 +46,9 @@
                 Clear
             </button>
             <!-- Additional Controls -->
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalUser">
-                Add User
-            </button>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalFiles">
-                Add Files
-            </button>
             <button type="button" class="btn btn-primary"
-                    onclick="window.Sentiment.exportDB();">
-                Export Annotations
+                    onclick="window.Sentiment.downloadFile();">
+                Download Annotations
             </button>
         </form>
     </div>
@@ -143,116 +145,9 @@
         </div>
         <div id="counter"></div>
     </div>
-    <!-- Modal User -->
-    <div class="modal fade" id="modalUser" tabindex="-1" role="dialog" aria-labelledby="modalUserLabel">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                            aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="modalUserLabel">Register New User</h4>
-                </div>
-                <div class="modal-body">
-                    <form class="form-horizontal" id="formUser">
-                        <div class="form-group">
-                            <label for="userFirstName" class="col-sm-2 control-label">First Name</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" id="userFirstName" placeholder="First Name">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="userLastName" class="col-sm-2 control-label">Last Name</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" id="userLastName" placeholder="Last Name">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="userUserName" class="col-sm-2 control-label">User Name</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" id="userUserName" placeholder="User Name">
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="addUser()" data-dismiss="modal">Add User
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Modal Files -->
-    <div class="modal fade" id="modalFiles" tabindex="-1" role="dialog" aria-labelledby="modalFilesLabel">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                            aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="modalFilesLabel">File Upload</h4>
-                </div>
-                <div class="modal-body">
-                    <form id="formFiles" enctype="multipart/form-data" method="post">
-                        <input id="iptFiles" name="file" type="file" multiple/>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="addFiles()">Add Files
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 <script type='text/javascript'>
     window.Sentiment.init();
-
-    function addUser() {
-        let firstname = $("#userFirstName").val();
-        let lastname = $("#userLastName").val()
-        let username = $("#userUserName").val()
-        console.log(firstname, lastname, username);
-
-        $.ajax({
-            url: "/users",
-            method: "POST",
-            data: {
-                firstname: firstname,
-                lastname: lastname,
-                username: username,
-            },
-            success: function (response) {
-                console.log("Success");
-                window.Sentiment.get_users();
-                $(":input", "#formUser").val("")
-            }
-        });
-    }
-
-    function addFiles() {
-        var fd = new FormData();
-        $.each($('#iptFiles')[0].files, function (i, file) {
-            fd.append('files', file);
-        });
-        console.log(fd);
-        $.ajax({
-            url: "/grapat/add",
-            type: "POST",
-            data: fd,
-            contentType: false,
-            processData: false,
-            cache: false,
-            success: function (response) {
-                if (response !== 0) {
-                    document.getElementById("formFiles").reset();
-                    window.Sentiment.get_files_to_be_annotated();
-                } else {
-                    alert('file not uploaded');
-                }
-            },
-        })
-    }
 </script>
 </body>
 

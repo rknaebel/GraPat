@@ -13,6 +13,7 @@ def db_execute(stmt, params=(), commit=False):
 
 def db_fetch_results(query, params=()):
     con = sqlite3.connect("db/grapat.db")
+    print("SQL:", query, params)
     cur = con.cursor()
     cur.execute(query, params)
     result = cur.fetchall()
