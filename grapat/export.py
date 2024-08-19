@@ -192,10 +192,10 @@ def export_db():
             "SELECT DISTINCT username, annotation_bundle, sentence FROM results"):
         try:
             graph_xml = get_xml_from_grapat(username, text_id, sentence)
-            filename = f'{text_id}-{sentence}-{username}.xml'
+            filename = f'{text_id}-{username}.xml'
             with open(os.path.join(export_path, filename), 'wb') as fh:
                 fh.write(graph_xml)
-            os.chmod(filename, 0o777)
+            os.chmod(os.path.join(export_path, filename), 0o777)
         except KeyError as e:
             print(f"Error while exporting file {text_id}", e, file=sys.stderr)
             continue
