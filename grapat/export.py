@@ -1,6 +1,7 @@
 import json
 import os.path
 import re
+import sys
 import time
 
 from lxml import etree
@@ -186,8 +187,15 @@ def export_db():
     timestr = time.strftime("%Y%m%d-%H%M%S")
     export_path = os.path.join("exports", timestr)
     os.makedirs(export_path, exist_ok=True)
+    os.chmod(export_path, 0o777)
     for username, text_id, sentence in db_fetch_results(
             "SELECT DISTINCT username, annotation_bundle, sentence FROM results"):
-        graph_xml = get_xml_from_grapat(username, text_id, sentence)
-        with open(os.path.join(export_path, f'{text_id}-{sentence}-{username}.xml'), 'wb') as fh:
-            fh.write(graph_xml)
+        try:
+            graph_xml = get_xml_from_grapat(username, text_id, sentence)
+            filename = f'{text_id}-{sentence}-{username}.xml'
+            with open(os.path.join(export_path, filename), 'wb') as fh:
+                fh.write(graph_xml)
+            os.chmod(filename, 0o777)
+        except KeyError as e:
+            print(f"Error while exporting file {text_id}", e, file=sys.stderr)
+            continue

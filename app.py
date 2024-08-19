@@ -43,7 +43,8 @@ async def lifespan(app: FastAPI):
                       `segment` TEXT
                     );
                     """)
-
+    os.chmod("db", 0o777)
+    os.chmod(os.path.join("db", "grapat.db"), 0o777)
     yield
     # something for shutdown
     grapat.export.export_db()
